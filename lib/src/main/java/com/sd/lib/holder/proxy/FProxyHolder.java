@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 代理对象持有者
@@ -17,6 +18,7 @@ import java.util.WeakHashMap;
 public class FProxyHolder<T> implements ProxyHolder<T>
 {
     private T mObject;
+    private Map<T, String> mMapObject;
 
     private Class<T> mClass;
     private T mProxy;
@@ -38,6 +40,32 @@ public class FProxyHolder<T> implements ProxyHolder<T>
     }
 
     @Override
+    public synchronized void add(T object)
+    {
+        if (object == null)
+            return;
+
+        if (mMapObject == null)
+            mMapObject = new ConcurrentHashMap<>();
+
+        mMapObject.put(object, "");
+    }
+
+    @Override
+    public synchronized void remove(T object)
+    {
+        if (object == null)
+            return;
+
+        if (mMapObject != null)
+        {
+            mMapObject.remove(object);
+            if (mMapObject.isEmpty())
+                mMapObject = null;
+        }
+    }
+
+    @Override
     public synchronized T get()
     {
         return getProxy();
@@ -55,7 +83,7 @@ public class FProxyHolder<T> implements ProxyHolder<T>
         if (mMapChildren == null)
             mMapChildren = new WeakHashMap<>();
 
-        mMapChildren.put(child, null);
+        mMapChildren.put(child, "");
     }
 
     @Override
@@ -67,6 +95,16 @@ public class FProxyHolder<T> implements ProxyHolder<T>
             if (mMapChildren.isEmpty())
                 mMapChildren = null;
         }
+    }
+
+    private boolean hasChild()
+    {
+        return mMapChildren != null && mMapChildren.size() > 0;
+    }
+
+    private boolean hasObjects()
+    {
+        return mMapObject != null && mMapObject.size() > 0;
     }
 
     /**
@@ -88,15 +126,30 @@ public class FProxyHolder<T> implements ProxyHolder<T>
         {
             synchronized (FProxyHolder.this)
             {
+                Object result = null;
+
                 if (mObject != null)
                 {
-                    final Object realResult = method.invoke(mObject, args);
+                    result = method.invoke(mObject, args);
+                    notifyObject(method, args);
                     notifyChildren(method, args);
-                    return realResult;
                 } else
                 {
-                    return notifyChildren(method, args);
+                    if (hasChild())
+                    {
+                        // 优先使用child的返回值
+                        notifyObject(method, args);
+                        result = notifyChildren(method, args);
+                    } else if (hasObjects())
+                    {
+                        // 如果没有child，则使用object的返回值
+                        result = notifyObject(method, args);
+                        notifyChildren(method, args);
+                    }
                 }
+
+                result = fixResult(result, method);
+                return result;
             }
         }
     };
@@ -104,8 +157,7 @@ public class FProxyHolder<T> implements ProxyHolder<T>
     private Object notifyChildren(Method method, Object[] args) throws InvocationTargetException, IllegalAccessException
     {
         Object result = null;
-
-        if (mMapChildren != null)
+        if (hasChild())
         {
             final List<ProxyHolder<? extends T>> list = new ArrayList<>(mMapChildren.keySet());
             for (ProxyHolder<? extends T> item : list)
@@ -114,7 +166,24 @@ public class FProxyHolder<T> implements ProxyHolder<T>
                 result = method.invoke(itemObject, args);
             }
         }
+        return result;
+    }
 
+    private Object notifyObject(Method method, Object[] args) throws InvocationTargetException, IllegalAccessException
+    {
+        Object result = null;
+        if (hasObjects())
+        {
+            for (T item : mMapObject.keySet())
+            {
+                result = method.invoke(item, args);
+            }
+        }
+        return result;
+    }
+
+    private Object fixResult(Object result, Method method)
+    {
         final Class<?> returnType = method.getReturnType();
         final boolean isVoid = returnType == void.class || returnType == Void.class;
         if (isVoid)
@@ -127,7 +196,6 @@ public class FProxyHolder<T> implements ProxyHolder<T>
             else
                 result = 0;
         }
-
         return result;
     }
 

@@ -10,6 +10,20 @@ public interface ProxyHolder<T>
     void set(T object);
 
     /**
+     * 添加对象
+     *
+     * @param object
+     */
+    void add(T object);
+
+    /**
+     * 移除对象
+     *
+     * @param object
+     */
+    void remove(T object);
+
+    /**
      * 返回代理对象
      *
      * @return
