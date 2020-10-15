@@ -7,45 +7,44 @@ import com.sd.lib.holder.proxy.ProxyHolder;
 
 public class TestAdapter
 {
-    private final ViewHolderA mViewHolderA = new ViewHolderA();
-    private final ViewHolderB mViewHolderB = new ViewHolderB();
+    private final ViewHolder mViewHolder = new ViewHolder();
 
+    /**
+     * Adapter回调对象持有
+     */
     public final ProxyHolder<Callback> mCallbackHolder = new FProxyHolder<>(Callback.class);
 
     public TestAdapter()
     {
-        // ViewHolderA
-        mViewHolderA.mCallbackHolder.set(new ViewHolderA.Callback()
+        // 给ViewHolder设置回调对象
+        mViewHolder.mCallbackHolder.set(new ViewHolder.Callback()
         {
             @Override
-            public void onEventViewHolderA()
+            public void onEventViewHolder()
             {
-                Log.i(MainActivity.TAG, "onEventViewHolderA in adapter");
+                Log.i(MainActivity.TAG, "onEventViewHolder set in adapter");
             }
         });
-        mViewHolderA.mCallbackHolder.addChild(mCallbackHolder);
+        // 给ViewHolder添加回调对象
+        mViewHolder.mCallbackHolder.add(new ViewHolder.Callback()
+        {
+            @Override
+            public void onEventViewHolder()
+            {
+                Log.i(MainActivity.TAG, "onEventViewHolder add in adapter");
+            }
+        });
 
-        // ViewHolderB
-        mViewHolderB.mCallbackHolder.set(new ViewHolderB.Callback()
-        {
-            @Override
-            public void onEventViewHolderB()
-            {
-                Log.i(MainActivity.TAG, "onEventViewHolderB in adapter");
-            }
-        });
-        mViewHolderB.mCallbackHolder.addChild(mCallbackHolder);
+        // 让ViewHolder的回调对象，通知Adapter的回调对象
+        mViewHolder.mCallbackHolder.addChild(mCallbackHolder);
     }
 
     public void notifyEvent()
     {
-        mViewHolderA.notifyEvent();
-        mViewHolderB.notifyEvent();
-        mCallbackHolder.get().onEventAdapter();
+        mViewHolder.notifyEvent();
     }
 
-    public interface Callback extends ViewHolderA.Callback, ViewHolderB.Callback
+    public interface Callback extends ViewHolder.Callback
     {
-        void onEventAdapter();
     }
 }

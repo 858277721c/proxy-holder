@@ -27,27 +27,13 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        mAdapter.mCallbackHolder.set(mCallback);
+        mAdapter.mCallbackHolder.set(new TestAdapter.Callback()
+        {
+            @Override
+            public void onEventViewHolder()
+            {
+                Log.i(TAG, "onEventViewHolder in Activity");
+            }
+        });
     }
-
-    private final TestAdapter.Callback mCallback = new TestAdapter.Callback()
-    {
-        @Override
-        public void onEventViewHolderA()
-        {
-            Log.i(TAG, "onEventViewHolderA in Activity");
-        }
-
-        @Override
-        public void onEventViewHolderB()
-        {
-            Log.i(TAG, "onEventViewHolderB in Activity");
-        }
-
-        @Override
-        public void onEventAdapter()
-        {
-            Log.i(TAG, "onEventAdapter");
-        }
-    };
 }
