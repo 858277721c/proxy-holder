@@ -10,6 +10,13 @@ public interface ProxyHolder<T>
     void set(T object);
 
     /**
+     * 返回代理对象
+     *
+     * @return
+     */
+    T get();
+
+    /**
      * 添加对象
      *
      * @param object
@@ -22,13 +29,6 @@ public interface ProxyHolder<T>
      * @param object
      */
     void remove(T object);
-
-    /**
-     * 返回代理对象
-     *
-     * @return
-     */
-    T get();
 
     /**
      * 添加child

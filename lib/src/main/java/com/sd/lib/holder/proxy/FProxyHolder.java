@@ -40,6 +40,12 @@ public class FProxyHolder<T> implements ProxyHolder<T>
     }
 
     @Override
+    public synchronized T get()
+    {
+        return getProxy();
+    }
+
+    @Override
     public synchronized void add(T object)
     {
         if (object == null)
@@ -63,12 +69,6 @@ public class FProxyHolder<T> implements ProxyHolder<T>
             if (mMapObject.isEmpty())
                 mMapObject = null;
         }
-    }
-
-    @Override
-    public synchronized T get()
-    {
-        return getProxy();
     }
 
     @Override
